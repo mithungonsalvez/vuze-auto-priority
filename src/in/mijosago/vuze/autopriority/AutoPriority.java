@@ -1,13 +1,14 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * AutoPriority.java
+ *
+ * Created on Oct 22, 2011
  */
 
 package in.mijosago.vuze.autopriority;
 
-import in.mijosago.vuze.autopriority.ui.SortingFrame;
-import org.gudy.azureus2.plugins.download.DownloadException;
 import static org.gudy.azureus2.plugins.ui.tables.TableManager.*;
+
+import in.mijosago.vuze.autopriority.ui.SortingFrame;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,20 +19,22 @@ import org.gudy.azureus2.plugins.PluginException;
 import org.gudy.azureus2.plugins.PluginInterface;
 import org.gudy.azureus2.plugins.disk.DiskManagerFileInfo;
 import org.gudy.azureus2.plugins.download.Download;
+import org.gudy.azureus2.plugins.download.DownloadException;
 import org.gudy.azureus2.plugins.ui.menus.MenuItem;
 import org.gudy.azureus2.plugins.ui.menus.MenuItemListener;
-import org.gudy.azureus2.plugins.ui.tables.TableContextMenuItem;
 import org.gudy.azureus2.plugins.ui.tables.TableManager;
 import org.gudy.azureus2.plugins.ui.tables.TableRow;
 
 /**
- *
- * @author MJ
+ * Main Plugin Class
+ * @author Mithun Gonsalvez
  */
 public class AutoPriority implements Plugin {
 
-    private class MyMenuItemListener implements MenuItemListener {
+    /** Menu Item Listener */
+    private class DefaultMenuItemListener implements MenuItemListener {
 
+        /** {@inheritDoc} */
         @Override
         public void selected(MenuItem mi, Object o) {
 
@@ -48,14 +51,21 @@ public class AutoPriority implements Plugin {
 
     };
 
+    /** Thread that handles the case where the user clicks "Auto Priority" on File(s) */
     private static class FilesHandlerThread extends DoodleThread {
 
+        /** Table Rows */
         private final TableRow[] trs;
 
+        /**
+         * Constructor
+         * @param trs Table Rows
+         */
         public FilesHandlerThread(TableRow[] trs) {
             this.trs = trs;
         }
 
+        /** {@inheritDoc} */
         @Override
         public void run() {
             int len = trs.length;
@@ -84,14 +94,21 @@ public class AutoPriority implements Plugin {
 
     }
 
+    /** Thread that handles the case where the user clicks "Auto Priority" on a Torrent */
     private static class TorrentHandlerThread extends DoodleThread {
 
+        /** Table Row */
         private final TableRow tr;
 
+        /**
+         * Constructor
+         * @param tr Table Row
+         */
         public TorrentHandlerThread(TableRow tr) {
             this.tr = tr;
         }
 
+        /** {@inheritDoc} */
         @Override
         public void run() {
             Object ds = tr.getDataSource();
@@ -111,8 +128,16 @@ public class AutoPriority implements Plugin {
 
     }
 
+    /** Extension of Thread class that provides some basic functions */
     private static abstract class DoodleThread extends Thread {
 
+        /**
+         * Each {@link DiskManagerFileInfo} object is checked for skip or delete option
+         * If it is a file that is being downloaded, then it is considered for Prioritization
+         * @param dmfi instance of {@link DiskManagerFileInfo} that is to be checked and added
+         * @param fnL List where the valid Files are added
+         * @param filesM Contains the mapping between the file and {@link DiskManagerFileInfo}
+         */
         public void processFileInfo(DiskManagerFileInfo dmfi, List<File> fnL, Map<File, DiskManagerFileInfo> filesM) {
             if (!dmfi.isSkipped() && !dmfi.isDeleted()) {
                 File f = dmfi.getFile();
@@ -121,6 +146,12 @@ public class AutoPriority implements Plugin {
             }
         }
 
+        /**
+         * Initializes the {@link SortingFrame} and displays it
+         * @param name Title of the Sorting Frame
+         * @param fn Files Array that has to be displayed
+         * @param filesM Contains the mapping between the file and {@link DiskManagerFileInfo}
+         */
         public void callSortingFrame(String name, File[] fn, Map<File, DiskManagerFileInfo> filesM) {
             SortingFrame njf = new SortingFrame(fn, filesM);
             njf.setTitle(name);
@@ -130,19 +161,17 @@ public class AutoPriority implements Plugin {
 
     }
 
+    /** {@inheritDoc} */
     @Override
     public void initialize(PluginInterface pi) throws PluginException {
         TableManager tm = pi.getUIManager().getTableManager();
+        DefaultMenuItemListener dml = new DefaultMenuItemListener();
 
-        TableContextMenuItem incl = tm.addContextMenuItem(TABLE_MYTORRENTS_INCOMPLETE, "auto.priority"); // Library - Adv View
-        TableContextMenuItem ongoing = tm.addContextMenuItem(TABLE_MYTORRENTS_ALL_BIG, "auto.priority"); // Library - Simple View
-        TableContextMenuItem c = tm.addContextMenuItem(TABLE_TORRENT_FILES, "auto.priority"); // On Individual Files
-        TableContextMenuItem d = tm.addContextMenuItem(TABLE_MYTORRENTS_INCOMPLETE_BIG, "auto.priority"); // Downloading
+        tm.addContextMenuItem(TABLE_MYTORRENTS_INCOMPLETE, "auto.priority").addListener(dml);     // Library - Adv View
+        tm.addContextMenuItem(TABLE_MYTORRENTS_ALL_BIG, "auto.priority").addListener(dml);        // Library - Simple View
+        tm.addContextMenuItem(TABLE_MYTORRENTS_INCOMPLETE_BIG, "auto.priority").addListener(dml); // Downloading View
+        tm.addContextMenuItem(TABLE_TORRENT_FILES, "auto.priority").addMultiListener(dml);        // On Individual Files
 
-        incl.addListener(new MyMenuItemListener());
-        ongoing.addListener(new MyMenuItemListener());
-        d.addListener(new MyMenuItemListener());
-        c.addMultiListener(new MyMenuItemListener());
     }
 
 }
