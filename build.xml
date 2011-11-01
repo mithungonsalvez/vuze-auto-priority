@@ -13,9 +13,28 @@
 
     <property file="src/plugin.properties"/>
     <target name="-post-jar">
-        <echo>${dist.jar}</echo>
-        <echo>${dist.jar.prefix}</echo>
-        <move file="${dist.jar}" tofile="${dist.jar.prefix}-${plugin.version}.jar"/>
+        <property name="plugin.name.prefix" value="${dist.dir}/${plugin.id}_${plugin.version}"/>
+
+        <!-- Rename Jar to the required name format -->
+        <echo>Renaming ${dist.jar} to ${plugin.name.prefix}.jar</echo>
+        <move file="${dist.jar}" tofile="${plugin.name.prefix}.jar"/>
+
+        <!-- Create dist bundle -->
+        <zip destfile="${plugin.name.prefix}.zip" level="9">
+            <zipfileset dir="."           file="Licence.txt"/>
+            <zipfileset dir="."           file="ReadMe.txt"/>
+            <zipfileset dir="${dist.dir}" file="${plugin.name.prefix}.jar"/>
+        </zip>
+
+        <!-- Create src bundle -->
+        <zip destfile="${plugin.name.prefix}_src.zip" level="9">
+            <zipfileset dir="."         prefix="${application.title}"             file="build.xml"/>
+            <zipfileset dir="."         prefix="${application.title}"             file="ReadMe.txt"/>
+            <zipfileset dir="."         prefix="${application.title}"             file="Licence.txt"/>
+            <zipfileset dir="src"       prefix="${application.title}/src"/>
+            <zipfileset dir="nbproject" prefix="${application.title}/nbproject"/>
+        </zip>
+
     </target>
 
     <!--
