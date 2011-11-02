@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import javax.activation.ActivationDataFlavor;
+import javax.activation.UnsupportedDataTypeException;
 import javax.swing.AbstractListModel;
 import javax.swing.JComponent;
 import javax.swing.JList;
@@ -51,10 +52,6 @@ public class SortingFrame extends javax.swing.JFrame {
         /** Reading order in the files list */
         private int[] readIdx;
 
-        /** Whether the order being served is reversed */
-        private boolean reverse; /* false by default */
-
-
         /** {@inheritDoc} */
         @Override
         public int getSize() {
@@ -64,8 +61,7 @@ public class SortingFrame extends javax.swing.JFrame {
         /** {@inheritDoc} */
         @Override
         public File getElementAt(int index) {
-            int nIdx = reverse ? (this.size - index - 1) : index;
-            return files[readIdx[nIdx]];
+            return files[readIdx[index]];
         }
 
         /**
@@ -87,8 +83,14 @@ public class SortingFrame extends javax.swing.JFrame {
          * Reverse the order being displayed
          */
         private void reverse() {
-            this.reverse = !reverse;
-            this.fireContentsChanged(this, 0, this.size);
+            if (this.size > 1) {
+                for (int i = 0, j = this.size - 1; i < this.size / 2; i++, j--) {
+                    int ith = this.readIdx[i];
+                    this.readIdx[i] = this.readIdx[j];
+                    this.readIdx[j] = ith;
+                }
+                this.fireContentsChanged(this, 0, this.size);
+            }
         }
 
         /**
@@ -208,7 +210,10 @@ public class SortingFrame extends javax.swing.JFrame {
 
                 @Override
                 public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
-                    return selectedValues;
+                    if (flavor.equals(ADF)) {
+                        return selectedValues;
+                    }
+                    throw new UnsupportedFlavorException(flavor);
                 }
 
             };
