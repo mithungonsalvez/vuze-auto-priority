@@ -1,0 +1,1 @@
+Provides a Context Menu on Torrents and Files called "Auto Priority" to set the Numeric Priority for a Group of files.
